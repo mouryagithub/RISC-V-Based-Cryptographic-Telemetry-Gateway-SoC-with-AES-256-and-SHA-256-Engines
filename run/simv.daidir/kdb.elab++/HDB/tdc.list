@@ -1,0 +1,5 @@
+../rtl/interconnect/arbiter.v
+../rtl/interconnect/axi_interconnect.v
+../rtl/interconnect/axi_interconnect_wrap_2x10.v
+../rtl/interconnect/priority_encoder.v
+../tb/tb_axi_interconnect.sv

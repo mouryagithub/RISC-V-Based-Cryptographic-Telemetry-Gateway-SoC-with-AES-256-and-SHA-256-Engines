@@ -1,0 +1,38 @@
+{
+    "std": [
+        "std",
+        "reYIK",
+        "module",
+        1
+    ],
+    "axi_interconnect_wrap_2x10": [
+        "axi_interconnect_wrap_2x10",
+        "YWHKd",
+        "module",
+        2
+    ],
+    "arbiter": [
+        "arbiter",
+        "ujx5M",
+        "module",
+        3
+    ],
+    "priority_encoder_0000": [
+        "priority_encoder_0000",
+        "VTikG",
+        "module",
+        4
+    ],
+    "tb_axi_interconnect": [
+        "tb_axi_interconnect",
+        "QaprS",
+        "module",
+        5
+    ],
+    "...MASTER...": [
+        "SIM",
+        "amcQw",
+        "module",
+        6
+    ]
+}

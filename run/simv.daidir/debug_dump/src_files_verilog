@@ -1,0 +1,5 @@
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/arbiter.v
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/axi_interconnect.v
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/axi_interconnect_wrap_2x10.v
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/priority_encoder.v
+/home/student/1602-23-735-154/project_dir/tb/tb_axi_interconnect.sv
