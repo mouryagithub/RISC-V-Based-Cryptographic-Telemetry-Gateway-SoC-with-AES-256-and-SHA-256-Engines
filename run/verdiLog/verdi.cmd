@@ -620,3 +620,48 @@ wvScrollDown -win $_nWave2 0
 wvScrollDown -win $_nWave2 0
 wvScrollDown -win $_nWave2 0
 wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+srcSignalView -on
+srcSignalView -off
+srcSignalView -on
+verdiDockWidgetRestore -dock windowDock_nWave_2
+verdiSetActWin -win $_nSchema_3
+srcSignalView -off
+verdiDockWidgetMaximize -dock windowDock_nWave_2
+verdiSetActWin -win $_nWave2
+srcSignalView -on
+srcSignalView -off
+srcSignalView -on
+verdiWindowBeWindow -win $_nWave2
+wvResizeWindow -win $_nWave2 -10 19 1600 326
+wvResizeWindow -win $_nWave2 -10 19 1600 836
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 1
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollUp -win $_nWave2 1
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvScrollDown -win $_nWave2 0
+wvResizeWindow -win $_nWave2 -10 17 1600 326
+wvResizeWindow -win $_nWave2 -10 19 1600 836

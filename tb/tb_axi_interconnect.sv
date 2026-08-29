@@ -1090,10 +1090,4 @@ module tb_axi_interconnect;
         repeat (10) @(posedge clk);
         $finish;
     end
-    initial begin
-	    $fsdbDumpfile("dump.fsdb");
-	    $fsdbDumpvars("+all");
-	    $fsdbDumpMDA();
-	    $fsdbDumpSVA();
-    end
 endmodule
