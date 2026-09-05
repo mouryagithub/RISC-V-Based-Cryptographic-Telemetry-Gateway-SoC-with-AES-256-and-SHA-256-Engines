@@ -616,7 +616,7 @@ module axi_interconnect_wrap_2x10 #
     input  wire                     m09_axi_awready,
     output wire [DATA_WIDTH-1:0]    m09_axi_wdata,
     output wire [STRB_WIDTH-1:0]    m09_axi_wstrb,
-    output wire                     m09_axi_wlast,
+    output wire                     m09_axi_wlast,: Cryptographic Telemetry Gateway SoC.
     output wire [WUSER_WIDTH-1:0]   m09_axi_wuser,
     output wire                     m09_axi_wvalid,
     input  wire                     m09_axi_wready,
