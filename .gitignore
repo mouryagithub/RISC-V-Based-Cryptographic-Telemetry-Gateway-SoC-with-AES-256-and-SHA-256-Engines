@@ -1,0 +1,50 @@
+# VCS / Synopsys simulation
+simv
+simv.daidir/
+csrc/
+*.daidir/
+ucli.key
+
+# VCS generated files
+*.sdb
+*.so
+*.o
+*_archive_*.so
+*_archive_*.a
+
+# Logs
+*.log
+*.out
+*.tmp
+*.bak
+
+# Verdi / Novas
+verdiLog/
+novas.conf
+novas.rc
+novas_dump.log
+novas.log
+novas_autosave.*
+verdi_config_file
+verdi_perf_err.log
+verdi.cmd.bak
+
+# Waveforms
+*.fsdb
+*.vpd
+*.vcd
+*.vcd.gz
+*.dump
+*.shm/
+
+# Editor temporary files
+*.swp
+*.swo
+*.swn
+*~
+
+# OS files
+.DS_Store
+
+# LibreOffice lock files
+.~lock.*#
