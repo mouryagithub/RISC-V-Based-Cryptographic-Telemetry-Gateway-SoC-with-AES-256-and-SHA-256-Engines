@@ -3,31 +3,49 @@
         "std",
         "reYIK",
         "module",
+        7
+    ],
+    "axi_internal_fifo_0000": [
+        "axi_internal_fifo_0000",
+        "Bvfk1",
+        "module",
         1
     ],
-    "axi_interconnect_wrap_2x10": [
-        "axi_interconnect_wrap_2x10",
-        "YWHKd",
+    "axi_internal_fifo_0001": [
+        "axi_internal_fifo_0001",
+        "jTQWg",
         "module",
-        2
-    ],
-    "arbiter": [
-        "arbiter",
-        "ujx5M",
-        "module",
-        3
+        8
     ],
     "priority_encoder_0000": [
         "priority_encoder_0000",
         "VTikG",
         "module",
+        5
+    ],
+    "arbiter": [
+        "arbiter",
+        "ujx5M",
+        "module",
         4
     ],
-    "tb_axi_interconnect": [
-        "tb_axi_interconnect",
-        "QaprS",
+    "axi_interconnect_wrap_2x10": [
+        "axi_interconnect_wrap_2x10",
+        "YWHKd",
         "module",
-        5
+        3
+    ],
+    "axi_to_axilite_bridge": [
+        "axi_to_axilite_bridge",
+        "y8gxe",
+        "module",
+        2
+    ],
+    "tb_soc_top": [
+        "tb_soc_top",
+        "ms9A6",
+        "module",
+        10
     ],
     "...MASTER...": [
         "SIM",

@@ -1,4 +1,3 @@
 Command Line: /home/student/snps_tools_target/verdi/U-2023.03-SP1/platform/LINUXAMD64/bin/Novas -ssf dump.fsdb
-uname(Linux vlsi52.vce.ac.in 4.18.0-553.el8_10.x86_64 #1 SMP Fri May 24 13:05:10 UTC 2024 x86_64)
-Not a real FSM!
-Not a real FSM!
+uname(Linux vlsi64.vce.ac.in 4.18.0-553.53.1.el8_10.x86_64 #1 SMP Fri May 23 15:07:49 UTC 2025 x86_64)
+au time 570.903119 4.986829 5.665989 delta 338669568 338669568 total 909762560 909762560

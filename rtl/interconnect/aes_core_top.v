@@ -9,7 +9,7 @@
 //      and the AES Inverse Cipher core (aes_inv_cipher_top) from the
 //      ASICS.ws open-source Rijndael IP (aes.pdf)
 //   3. Implements the 256-bit key scheduling:
-//      The IP cores natively accept 128-bit keys. For AES-256 a standard
+//         The IP cores natively accept 128-bit keys. For AES-256 a standard
 //      two-stage key schedule is performed:
 //        - First 128 bits (key[127:0])  fed in the first ld/kld pulse
 //        - Upper 128 bits (key[255:128]) fed in the second ld/kld pulse

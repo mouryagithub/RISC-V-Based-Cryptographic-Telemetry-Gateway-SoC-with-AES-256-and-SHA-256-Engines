@@ -1,5 +1,16 @@
 /home/student/1602-23-735-154/project_dir/rtl/interconnect/arbiter.v
 /home/student/1602-23-735-154/project_dir/rtl/interconnect/axi_interconnect.v
 /home/student/1602-23-735-154/project_dir/rtl/interconnect/axi_interconnect_wrap_2x10.v
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/axi_to_axilite_bridge.v
 /home/student/1602-23-735-154/project_dir/rtl/interconnect/priority_encoder.v
-/home/student/1602-23-735-154/project_dir/tb/tb_axi_interconnect.sv
+/home/student/1602-23-735-154/project_dir/rtl/interconnect/soc_top.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/axi_internal_fifo.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/axi_uart.vh
+/home/student/1602-23-735-154/project_dir/rtl/uart/axi_uart_defines.vh
+/home/student/1602-23-735-154/project_dir/rtl/uart/axi_uart_top.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/timescale.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/uart_controller.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/uart_parity_bit_compute.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/uart_receiver.v
+/home/student/1602-23-735-154/project_dir/rtl/uart/uart_transmitter.v
+/home/student/1602-23-735-154/project_dir/tb/tb_soc_top.sv

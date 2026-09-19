@@ -1,4 +1,5 @@
 +incdir+../rtl
++incdir+../rtl/aes
 ../rtl/aes/timescale.v
 ../rtl/aes/aes_inv_sbox.v
 ../rtl/aes/aes_key_expand_128.v
@@ -6,4 +7,5 @@
 ../rtl/aes/aes_sbox.v
 ../rtl/aes/aes_cipher_top.v
 ../rtl/aes/aes_inv_cipher_top.v
-../tb/test_bench_top.v
+../rtl/aes/aes_axi_slave.v
+../tb/tb_aes_axi_slave.sv

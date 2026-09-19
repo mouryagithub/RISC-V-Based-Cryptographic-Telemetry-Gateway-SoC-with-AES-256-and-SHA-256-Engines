@@ -220,6 +220,8 @@ Selection-LineColor = ID_BLUE3
 Selection-LineWidth = 1
 [FSM_Dlg-Print]
 Orientation = Landscape
+[FileBrowser]
+nWaveOpenFsdbDirHistory = "\"/home/student/1602-23-735-154/project_dir/run/tb_axi_uart_top.fsdb\"" "\"/home/student/1602-23-735-154/project_dir/run/dump.fsdb\""
 [Form]
 version = Verdi_U-2023.03-SP1
 [General]
@@ -262,10 +264,11 @@ windowLayout = 0 0 804 500 182 214 804 148
 import_filter = *.v; *.vc; *.f
 designTreeFont = *-adobe-courier-medium-r-*-*-12-*-*-*-*-*-iso8859-*
 import_filter_vhdl = *.vhd; *.vhdl; *.f
-import_default_language = Verilog
 import_filter_verilog = *.v; *.vc; *.f
 simulation_file_type = 
 PrefetchViewableAnnot = TRUE
+import_default_language = Verilog
+import_from = source
 [Hier]
 filterTimeout = 1500
 [ImportLiberty]
@@ -372,8 +375,14 @@ saveWaveformStat = TRUE
 savePropStat = FALSE
 savePropDtl = TRUE
 [QtDialog]
-QwWarnMsgDlg = 490,372,600,250
-QwUserAskDlg = 638,422,324,130
+unknownSave_SaveSignal(s)NotFound = 503,311,590,340
+importDesignForm = 441,194,715,574
+openFileDlg = 498,239,602,483
+highlightColor = 461,317,675,327
+QwWarnMsgDlg = 490,650,740,250
+tipViewerDlg = 600,370,398,259
+QwUserAskDlg = 638,415,324,134
+unknownSave = 568,358,461,245
 [Relationship]
 hideRecursiceNode = FALSE
 [Safety]
@@ -385,11 +394,11 @@ ErrorObject = ID_GRAY5
 AnnotateSignal = TRUE
 HighlightSafetyObject = TRUE
 [Session Cache]
-2 = string (session file name)
 3 = string (session file name)
 4 = string (session file name)
 5 = string (session file name)
-1 = /home/student/verdiLog/novas_autosave.ses
+2 = /home/student/verdiLog/novas_autosave.ses
+1 = /home/student/1602-23-735-154/project_dir/run/verdiLog/novas_autosave.ses
 [Simulation]
 scsPath = scsim
 scsOption = 
@@ -415,13 +424,15 @@ vcs_mixPath = simv
 vcs_mixOption = -vhdlrun "-vhpi debussy:FSDBDumpCmd"
 scs_mixPath = scsim
 scs_mixOption = -vhpi debussy:FSDBDumpCmd
-interactiveDebugging = {True, False}
-KeepBreakPoints = False
 ScsDebugAll = False
 simType = {vcssv, xl, nc, vcs, mti, mti_vlog, vhnc, scs, mixnc}
 thirdpartyIdx = -1
 iscCmdSep = FALSE
 NoAppendOption = False
+bSVTBMode = TRUE
+SimMode = TRUE
+interactiveDebugging = TRUE
+KeepBreakPoints = FALSE
 [SimulationPlus]
 xlPath = verilog
 xlOption = 
@@ -445,16 +456,18 @@ vcs_mixPath = simv
 vcs_mixOption = -vhdlrun "-vhpi debussy:FSDBDumpCmd"
 scs_mixPath = scsim
 scs_mixOption = -vhpi debussy:FSDBDumpCmd
-vcs_svPath = simv
 vcs_svOption = 
-simType = vcssv
 thirdpartyIdx = -1
-interactiveDebugging = FALSE
-KeepBreakPoints = FALSE
 iscCmdSep = FALSE
 ScsDebugAll = FALSE
 NoAppendOption = FALSE
 invokeSimPath = work
+simType = vcssv
+bSVTBMode = TRUE
+SimMode = TRUE
+interactiveDebugging = TRUE
+KeepBreakPoints = FALSE
+vcs_svPath = /home/student/1602-23-735-154/project_dir/run/simv
 [SimulationPlus2]
 eventDumpUnfinish = FALSE
 [Source]
@@ -481,11 +494,13 @@ annotateFSMStateLimitNum = -1
 annotateFSMLimitNum = -1
 [SourceVHDL]
 vhSimType = ModelSim
-ohSimType = VerilogXL
+ohSimType = VCS
 [TclShell]
 nLineSize = 1024
 [Test]
 verbose_progress = FALSE
+[TestBenchBrowser]
+-showUVMDynamicHierTreeWin = FALSE
 [Text]
 hdlTypeName = blue4
 hdlLibrary = blue4
@@ -569,7 +584,7 @@ pdmlMacro = ID_BLACK
 font = COURIER12
 annotFont = Helvetica_M_R_10
 [Text.1]
-viewport = 340 92 900 700 45
+viewport = -1 26 1600 836 45
 [TextPrinter]
 Orientation = Landscape
 Indicator = FALSE
@@ -660,33 +675,33 @@ isOneSearchVisible = TRUE
 [VIA.oneSearch.preference.vgifColumnSettingRC.setting0]
 parRuleSets = ""
 [VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column0]
-name = Time
+name = Severity
 width = 60
-visualIndex = 0
+visualIndex = 1
 isHidden = TRUE
 isUserChangeColumnVisible = FALSE
 [VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column1]
-name = Code
-width = 60
-visualIndex = 2
-isHidden = TRUE
-isUserChangeColumnVisible = FALSE
-[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column2]
 name = Type
 width = 60
 visualIndex = 3
 isHidden = TRUE
 isUserChangeColumnVisible = FALSE
-[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column3]
+[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column2]
 name = Message
 width = 2000
 visualIndex = 4
 isHidden = FALSE
 isUserChangeColumnVisible = FALSE
-[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column4]
-name = Severity
+[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column3]
+name = Time
 width = 60
-visualIndex = 1
+visualIndex = 0
+isHidden = TRUE
+isUserChangeColumnVisible = FALSE
+[VIA.oneSearch.preference.vgifColumnSettingRC.setting0.column4]
+name = Code
+width = 60
+visualIndex = 2
 isHidden = TRUE
 isUserChangeColumnVisible = FALSE
 [Vi]
@@ -770,7 +785,8 @@ AutoApplySeverityColor = TRUE
 scope_to_save_with_macro
 open_file_dir
 open_rc_file_dir
-viewPort = 54 237 960 332 100 65
+getSignalForm = 0 0 800 479 100 30 100 30
+viewPort = 0 25 1600 181 192 200
 legendBackground = -c ID_BLACK
 valueBackground = -c ID_BLACK
 curveBackground = -c ID_BLACK
@@ -936,6 +952,8 @@ printBasic = 1 0 0 FALSE FALSE
 printDest = -printer {}
 printSignature = {%f %h %t} {}
 curveWindow_Drag&Drop_Mode = TRUE
+RecentFile1 = "\"/home/student/1602-23-735-154/project_dir/run/dump.fsdb\""
+RecentFile2 = "\"/home/student/1602-23-735-154/project_dir/run/tb_axi_uart_top.fsdb\""
 open_file_time_range = FALSE
 legend_window_font = -f COURIER12 -c ID_CYAN5
 value_window_font = -f COURIER12 -c ID_CYAN5
@@ -1134,6 +1152,10 @@ wordsShownInOneRow = 8
 syncCursorTime = FALSE
 fixCellColumnWidth = FALSE
 font = Courier 12
+[rtla]
+RtlaDbPath = 
+[schematics]
+viewport = 0 25 648 708
 [spiceDebug]
 ThroughNet = ID_YELLOW5
 InstrumentSig = ID_GREEN5
@@ -1146,3 +1168,7 @@ HighlightRuntimeInterfaceElement = TRUE
 HighlightSameNet = TRUE
 [turbo_library]
 bdb_load_scope = 
+[wave.0]
+viewPort = 0 25 1600 181 192 200
+[wave.1]
+viewPort = 0 25 1600 733 252 65

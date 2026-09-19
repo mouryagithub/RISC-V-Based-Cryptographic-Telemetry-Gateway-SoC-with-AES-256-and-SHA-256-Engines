@@ -1,5 +1,15 @@
 ../rtl/interconnect/arbiter.v
 ../rtl/interconnect/axi_interconnect.v
 ../rtl/interconnect/axi_interconnect_wrap_2x10.v
+../rtl/interconnect/axi_to_axilite_bridge.v
 ../rtl/interconnect/priority_encoder.v
-../tb/tb_axi_interconnect.sv
+../rtl/interconnect/soc_top.v
+../rtl/uart/axi_internal_fifo.v
+../rtl/uart/axi_uart.vh
+../rtl/uart/axi_uart_defines.vh
+../rtl/uart/axi_uart_top.v
+../rtl/uart/uart_controller.v
+../rtl/uart/uart_parity_bit_compute.v
+../rtl/uart/uart_receiver.v
+../rtl/uart/uart_transmitter.v
+../tb/tb_soc_top.sv

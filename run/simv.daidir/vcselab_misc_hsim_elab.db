@@ -1,6 +1,6 @@
 psSimBaseName                      	simv
 psLogFileName                      	NULL
-psDaiDir                           	/home/student/1602-23-735-154/project_dir/run/simv.daidir
+psDaiDir                           	simv.daidir
 destPath                           	csrc/
 fSharedMasterElab                  	0
 fHsimPCSharedLibSpecified          	0

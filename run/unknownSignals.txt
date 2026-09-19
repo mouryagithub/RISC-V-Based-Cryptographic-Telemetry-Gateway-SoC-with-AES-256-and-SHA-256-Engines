@@ -1,0 +1,16 @@
+test.clk
+test.rst
+test.tv[512:0]
+test.tmp[383:0]
+test.kld
+test.ciph[127:0]
+test.key[127:0]
+test.plain[127:0]
+test.text_in[127:0]
+test.text_out[127:0]
+test.text_out2[127:0]
+test.text_exp[127:0]
+test.done
+test.done2
+test.error_cnt
+test.n
