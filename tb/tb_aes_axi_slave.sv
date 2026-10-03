@@ -55,7 +55,7 @@ module tb_aes_axi_slave;
     wire        cipher_ld;
     wire        cipher_done;
 
-    wire [127:0] cipher_key;
+    wire [255:0] cipher_key;
     wire [127:0] cipher_text_in;
     wire [127:0] cipher_text_out;
 
@@ -69,7 +69,7 @@ module tb_aes_axi_slave;
     wire        inv_kdone;
     wire        inv_done;
 
-    wire [127:0] inv_key;
+    wire [255:0] inv_key;
     wire [127:0] inv_text_in;
     wire [127:0] inv_text_out;
 
@@ -454,6 +454,40 @@ module tb_aes_axi_slave;
 
 
     // ================================================================
+    // WAIT FOR INVERSE KDONE
+    // ================================================================
+
+    task automatic wait_inverse_kdone;
+
+        begin
+
+            timeout = 0;
+
+            while (!inv_kdone) begin
+
+                @(posedge clk);
+
+                timeout = timeout + 1;
+
+                if (timeout > 1000) begin
+
+                    $display("");
+                    $display("ERROR: AES INVERSE KEY EXPANSION TIMEOUT");
+                    $display("");
+
+                    errors = errors + 1;
+
+                    disable wait_inverse_kdone;
+                end
+
+            end
+
+        end
+
+    endtask
+
+
+    // ================================================================
     // WAIT FOR INVERSE DONE
     // ================================================================
 
@@ -569,45 +603,65 @@ module tb_aes_axi_slave;
 
 
         // ============================================================
-        // TEST VECTOR 0
+        // TEST VECTOR 0 (NIST FIPS-197 AES-256 Appendix C.3)
         //
         // Key:
-        // 00112233445566778899aabbccddeeff
+        // 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
         //
         // Plaintext:
-        // 00000000000000000000000000000001
+        // 00112233445566778899aabbccddeeff
         //
         // Expected ciphertext:
-        // 84d4c9c08b4f482861e3a9c6c35bc4d9
+        // 8ea2b7ca516745bfeafc49904b496089
         // ============================================================
 
         $display("----------------------------------------------------");
-        $display("VECTOR 0");
+        $display("VECTOR 0 (AES-256 NIST FIPS-197 App C.3)");
         $display("----------------------------------------------------");
 
 
         // ------------------------------------------------------------
-        // KEY
+        // KEY (256-bit: KEY0-KEY7)
         // ------------------------------------------------------------
 
         axi_write(
             8'h04,
-            32'hccddeeff
+            32'h1c1d1e1f
         );
 
         axi_write(
             8'h08,
-            32'h8899aabb
+            32'h18191a1b
         );
 
         axi_write(
             8'h0C,
-            32'h44556677
+            32'h14151617
         );
 
         axi_write(
             8'h10,
-            32'h00112233
+            32'h10111213
+        );
+
+        axi_write(
+            8'h14,
+            32'h0c0d0e0f
+        );
+
+        axi_write(
+            8'h18,
+            32'h08090a0b
+        );
+
+        axi_write(
+            8'h1C,
+            32'h04050607
+        );
+
+        axi_write(
+            8'h20,
+            32'h00010203
         );
 
 
@@ -617,22 +671,22 @@ module tb_aes_axi_slave;
 
         axi_write(
             8'h24,
-            32'h00000001
+            32'hccddeeff
         );
 
         axi_write(
             8'h28,
-            32'h00000000
+            32'h8899aabb
         );
 
         axi_write(
             8'h2C,
-            32'h00000000
+            32'h44556677
         );
 
         axi_write(
             8'h30,
-            32'h00000000
+            32'h00112233
         );
 
 
@@ -668,10 +722,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h34, rd_data);
 
-        if (rd_data !== 32'h8b4f4828) begin
+        if (rd_data !== 32'h4b496089) begin
 
             $display(
-                "ERROR: OUT0 expected 8b4f4828 got %h",
+                "ERROR: OUT0 expected 4b496089 got %h",
                 rd_data
             );
 
@@ -684,10 +738,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h38, rd_data);
 
-        if (rd_data !== 32'h61e3a9c6) begin
+        if (rd_data !== 32'heafc4990) begin
 
             $display(
-                "ERROR: OUT1 expected 61e3a9c6 got %h",
+                "ERROR: OUT1 expected eafc4990 got %h",
                 rd_data
             );
 
@@ -700,10 +754,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h3C, rd_data);
 
-        if (rd_data !== 32'hc35bc4d9) begin
+        if (rd_data !== 32'h516745bf) begin
 
             $display(
-                "ERROR: OUT2 expected c35bc4d9 got %h",
+                "ERROR: OUT2 expected 516745bf got %h",
                 rd_data
             );
 
@@ -716,10 +770,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h40, rd_data);
 
-        if (rd_data !== 32'h84d4c9c0) begin
+        if (rd_data !== 32'h8ea2b7ca) begin
 
             $display(
-                "ERROR: OUT3 expected 84d4c9c0 got %h",
+                "ERROR: OUT3 expected 8ea2b7ca got %h",
                 rd_data
             );
 
@@ -735,66 +789,111 @@ module tb_aes_axi_slave;
         // ============================================================
 
         $display("");
-        $display("Starting AES decryption...");
+        $display("Starting AES inverse key expansion...");
 
 
         // ------------------------------------------------------------
-        // INVERSE KEY
+        // INVERSE KEY (256-bit: INV_KEY0-INV_KEY7)
         // ------------------------------------------------------------
 
         axi_write(
             8'h48,
-            32'hccddeeff
+            32'h1c1d1e1f
         );
 
         axi_write(
             8'h4C,
-            32'h8899aabb
+            32'h18191a1b
         );
 
         axi_write(
             8'h50,
-            32'h44556677
+            32'h14151617
         );
 
         axi_write(
             8'h54,
-            32'h00112233
+            32'h10111213
+        );
+
+        axi_write(
+            8'h58,
+            32'h0c0d0e0f
+        );
+
+        axi_write(
+            8'h5C,
+            32'h08090a0b
+        );
+
+        axi_write(
+            8'h60,
+            32'h04050607
+        );
+
+        axi_write(
+            8'h64,
+            32'h00010203
         );
 
 
         // ------------------------------------------------------------
-        // CIPHERTEXT INPUT
-        // ------------------------------------------------------------
-
-        axi_write(
-            8'h68,
-            32'h8b4f4828
-        );
-
-        axi_write(
-            8'h6C,
-            32'h61e3a9c6
-        );
-
-        axi_write(
-            8'h70,
-            32'hc35bc4d9
-        );
-
-        axi_write(
-            8'h74,
-            32'h84d4c9c0
-        );
-
-
-        // ------------------------------------------------------------
-        // KLD + LD
+        // KLD (pulse bit[17])
         // ------------------------------------------------------------
 
         axi_write(
             8'h44,
-            32'h0003_0000
+            32'h0002_0000
+        );
+
+
+        // ------------------------------------------------------------
+        // WAIT FOR INVERSE KEY EXPANSION
+        // ------------------------------------------------------------
+
+        wait_inverse_kdone;
+
+        $display(
+            "AES INVERSE KEY EXPANSION DONE at time %0t",
+            $time
+        );
+
+
+        // ------------------------------------------------------------
+        // CIPHERTEXT INPUT TO DECRYPT
+        // ------------------------------------------------------------
+
+        axi_write(
+            8'h68,
+            32'h4b496089
+        );
+
+        axi_write(
+            8'h6C,
+            32'heafc4990
+        );
+
+        axi_write(
+            8'h70,
+            32'h516745bf
+        );
+
+        axi_write(
+            8'h74,
+            32'h8ea2b7ca
+        );
+
+
+        // ------------------------------------------------------------
+        // LD (pulse bit[16])
+        // ------------------------------------------------------------
+
+        $display("");
+        $display("Starting AES decryption...");
+
+        axi_write(
+            8'h44,
+            32'h0001_0000
         );
 
 
@@ -817,10 +916,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h78, rd_data);
 
-        if (rd_data !== 32'h00000001) begin
+        if (rd_data !== 32'hccddeeff) begin
 
             $display(
-                "ERROR: INV_OUT0 expected 00000001 got %h",
+                "ERROR: INV_OUT0 expected ccddeeff got %h",
                 rd_data
             );
 
@@ -833,10 +932,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h7C, rd_data);
 
-        if (rd_data !== 32'h00000000) begin
+        if (rd_data !== 32'h8899aabb) begin
 
             $display(
-                "ERROR: INV_OUT1 expected 00000000 got %h",
+                "ERROR: INV_OUT1 expected 8899aabb got %h",
                 rd_data
             );
 
@@ -849,10 +948,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h80, rd_data);
 
-        if (rd_data !== 32'h00000000) begin
+        if (rd_data !== 32'h44556677) begin
 
             $display(
-                "ERROR: INV_OUT2 expected 00000000 got %h",
+                "ERROR: INV_OUT2 expected 44556677 got %h",
                 rd_data
             );
 
@@ -865,10 +964,10 @@ module tb_aes_axi_slave;
 
         axi_read(8'h84, rd_data);
 
-        if (rd_data !== 32'h00000000) begin
+        if (rd_data !== 32'h00112233) begin
 
             $display(
-                "ERROR: INV_OUT3 expected 00000000 got %h",
+                "ERROR: INV_OUT3 expected 00112233 got %h",
                 rd_data
             );
 

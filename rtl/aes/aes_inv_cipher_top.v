@@ -56,11 +56,11 @@
 
 `include "timescale.v"
 
-module aes_inv_cipher_top(clk, rst, kld, ld, done, key, text_in, text_out );
+module aes_inv_cipher_top(clk, rst, kld, kdone, ld, done, key, text_in, text_out );
 input		clk, rst;
 input		kld, ld;
-output		done;
-input	[127:0]	key;
+output		kdone, done;
+input	[255:0]	key;
 input	[127:0]	text_in;
 output	[127:0]	text_out;
 
@@ -110,7 +110,7 @@ always @(posedge clk)
 	else
 	if(go)		dcnt <= #1 dcnt + 4'h1;
 
-always @(posedge clk)	done <= #1 (dcnt==4'hb) & !ld;
+always @(posedge clk)	done <= #1 (dcnt==4'hf) & !ld;
 
 always @(posedge clk)
 	if(!rst)	go <= #1 1'b0;
@@ -266,15 +266,15 @@ endfunction
 // Key Buffer
 //
 
-reg	[127:0]	kb[10:0];
+reg	[127:0]	kb[14:0];
 reg	[3:0]	kcnt;
 reg		kdone;
 reg		kb_ld;
 
 always @(posedge clk)
-	if(!rst)	kcnt <= #1 4'ha;
+	if(!rst)	kcnt <= #1 4'he;
 	else
-	if(kld)		kcnt <= #1 4'ha;
+	if(kld)		kcnt <= #1 4'he;
 	else
 	if(kb_ld)	kcnt <= #1 kcnt - 4'h1;
 
@@ -294,7 +294,7 @@ always @(posedge clk)	{w3, w2, w1, w0} <= #1 kb[dcnt];
 // Modules
 //
 
-aes_key_expand_128 u0(
+aes_key_expand_256 u0(
 	.clk(		clk	),
 	.kld(		kld	),
 	.key(		key	),

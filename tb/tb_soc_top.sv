@@ -70,13 +70,53 @@ module tb_soc_top;
     localparam CLK_PERIOD    = 20;          // 50 MHz — 20 ns period
     localparam BAUD_DIV      = 16'd434;     // 115200 baud @ 50 MHz
 
-    // UART register byte addresses (absolute, through interconnect)
+    // -------------------------------------------------------------------------
+    // Peripheral register byte addresses (absolute, through 2x5 interconnect)
+    // -------------------------------------------------------------------------
+    // m00: AES-256 Accelerator (0x4000_0000, 4 KB)
+    localparam [31:0] AES_BASE      = 32'h4000_0000;
+    localparam [31:0] AES_CTRL      = AES_BASE + 32'h00;  // R/W control
+    localparam [31:0] AES_STATUS    = AES_BASE + 32'h04;  // RO status
+    localparam [31:0] AES_KEY0      = AES_BASE + 32'h04;  // WO key word 0
+    localparam [31:0] AES_IV0       = AES_BASE + 32'h30;  // R/W IV word 0
+    localparam [31:0] AES_DIN0      = AES_BASE + 32'h40;  // WO data input word 0
+    localparam [31:0] AES_DOUT0     = AES_BASE + 32'h50;  // RO data output word 0
+
+    // m01: UART Serial Controller (0x4000_1000, 4 KB)
     localparam [31:0] UART_BASE     = 32'h4000_1000;
     localparam [31:0] UART_THR      = UART_BASE + 32'h00;  // TX holding / RX buffer
     localparam [31:0] UART_IER      = UART_BASE + 32'h04;  // interrupt enable
     localparam [31:0] UART_BAUD_DIV = UART_BASE + 32'h08;  // baud divisor (DLAB=1)
     localparam [31:0] UART_LCR      = UART_BASE + 32'h0C;  // line control
     localparam [31:0] UART_LSR      = UART_BASE + 32'h14;  // line status
+
+    // m02: System Timer rv_timer (0x4000_2000, 4 KB)
+    localparam [31:0] TIMER_BASE    = 32'h4000_2000;
+    localparam [31:0] TIMER_CTRL    = TIMER_BASE + 32'h004; // Active enable
+    localparam [31:0] TIMER_INTR_EN = TIMER_BASE + 32'h100;
+    localparam [31:0] TIMER_MTIME_L = TIMER_BASE + 32'h110; // 64-bit counter lower
+    localparam [31:0] TIMER_MTIME_H = TIMER_BASE + 32'h114; // 64-bit counter upper
+    localparam [31:0] TIMER_CMP_L   = TIMER_BASE + 32'h118; // Compare lower
+    localparam [31:0] TIMER_CMP_H   = TIMER_BASE + 32'h11C; // Compare upper
+
+    // m03: GPIO Controller (0x4000_3000, 4 KB)
+    localparam [31:0] GPIO_BASE     = 32'h4000_3000;
+    localparam [31:0] GPIO_INFO     = GPIO_BASE + 32'h000; // RO pin count = 64
+    localparam [31:0] GPIO_OE0      = GPIO_BASE + 32'h080; // Output enable bank 0
+    localparam [31:0] GPIO_IN0      = GPIO_BASE + 32'h100; // Input bank 0
+    localparam [31:0] GPIO_OUT0     = GPIO_BASE + 32'h180; // Output bank 0
+    localparam [31:0] GPIO_SET0     = GPIO_BASE + 32'h200; // Atomic set bank 0
+    localparam [31:0] GPIO_CLR0     = GPIO_BASE + 32'h280; // Atomic clear bank 0
+    localparam [31:0] GPIO_TGL0     = GPIO_BASE + 32'h300; // Atomic toggle bank 0
+
+    // m04: SHA-256 Accelerator (0x4000_4000, 4 KB)
+    localparam [31:0] SHA_BASE      = 32'h4000_4000;
+    localparam [31:0] SHA_NAME0     = SHA_BASE + 32'h00;   // "sha2"
+    localparam [31:0] SHA_NAME1     = SHA_BASE + 32'h04;   // "-256"
+    localparam [31:0] SHA_CTRL      = SHA_BASE + 32'h20;   // Control
+    localparam [31:0] SHA_STATUS    = SHA_BASE + 32'h24;   // Status (ready, valid)
+    localparam [31:0] SHA_BLOCK0    = SHA_BASE + 32'h40;   // Message block word 0
+    localparam [31:0] SHA_DIGEST0   = SHA_BASE + 32'h80;   // Digest word 0
 
     // Settle time after send_uart_byte: receiver FSM stop-bit + FIFO push
     // latency is up to BAUD_DIV + pipeline cycles; 600 gives safe margin.
@@ -149,179 +189,196 @@ module tb_soc_top;
     wire        uart_tx;
     reg         uart_rx;
 
-    // Interrupt
+    // GPIO signals
+    reg  [63:0] gpio_i;
+    wire [63:0] gpio_o;
+    wire [63:0] gpio_dir_o;
+    wire [1:0]  gpio_intr;
+
+    // Interrupt observation signals
     wire        uart_irq;
+    wire        timer_irq;
+    wire        aes_irq;
+    wire        sha_irq;
+    wire        dma_done;
+    wire        dma_error;
 
     // =========================================================================
-    // DUT: soc_top
+    // DUT: soc_top (Master SoC Top with 2x5 Interconnect)
     // =========================================================================
-    soc_top u_dut (
-        .clk             (clk),
-        .uart_clk        (uart_clk),
-        .aresetn         (aresetn),
+    soc_top #(
+        .USE_INTERNAL_CPU    (0),
+        .AXI_DATA_WIDTH      (32),
+        .AXI_ADDR_WIDTH      (32),
+        .AXI_ID_WIDTH        (8)
+    ) u_dut (
+        .clk                 (clk),
+        .uart_clk            (uart_clk),
+        .aresetn             (aresetn),
 
-        // s00 — TB master
-        .s00_axi_awid    (m_awid),
-        .s00_axi_awaddr  (m_awaddr),
-        .s00_axi_awlen   (m_awlen),
-        .s00_axi_awsize  (m_awsize),
-        .s00_axi_awburst (m_awburst),
-        .s00_axi_awlock  (m_awlock),
-        .s00_axi_awcache (m_awcache),
-        .s00_axi_awprot  (m_awprot),
-        .s00_axi_awqos   (m_awqos),
-        .s00_axi_awvalid (m_awvalid),
-        .s00_axi_awready (m_awready),
-        .s00_axi_wdata   (m_wdata),
-        .s00_axi_wstrb   (m_wstrb),
-        .s00_axi_wlast   (m_wlast),
-        .s00_axi_wvalid  (m_wvalid),
-        .s00_axi_wready  (m_wready),
-        .s00_axi_bid     (m_bid),
-        .s00_axi_bresp   (m_bresp),
-        .s00_axi_bvalid  (m_bvalid),
-        .s00_axi_bready  (m_bready),
-        .s00_axi_arid    (m_arid),
-        .s00_axi_araddr  (m_araddr),
-        .s00_axi_arlen   (m_arlen),
-        .s00_axi_arsize  (m_arsize),
-        .s00_axi_arburst (m_arburst),
-        .s00_axi_arlock  (m_arlock),
-        .s00_axi_arcache (m_arcache),
-        .s00_axi_arprot  (m_arprot),
-        .s00_axi_arqos   (m_arqos),
-        .s00_axi_arvalid (m_arvalid),
-        .s00_axi_arready (m_arready),
-        .s00_axi_rid     (m_rid),
-        .s00_axi_rdata   (m_rdata),
-        .s00_axi_rresp   (m_rresp),
-        .s00_axi_rlast   (m_rlast),
-        .s00_axi_rvalid  (m_rvalid),
-        .s00_axi_rready  (m_rready),
+        // External Master 0 (TB master -> s00 of interconnect)
+        .ext_s00_axi_awid    (m_awid),
+        .ext_s00_axi_awaddr  (m_awaddr),
+        .ext_s00_axi_awlen   (m_awlen),
+        .ext_s00_axi_awsize  (m_awsize),
+        .ext_s00_axi_awburst (m_awburst),
+        .ext_s00_axi_awlock  (m_awlock),
+        .ext_s00_axi_awcache (m_awcache),
+        .ext_s00_axi_awprot  (m_awprot),
+        .ext_s00_axi_awqos   (m_awqos),
+        .ext_s00_axi_awvalid (m_awvalid),
+        .ext_s00_axi_awready (m_awready),
+        .ext_s00_axi_wdata   (m_wdata),
+        .ext_s00_axi_wstrb   (m_wstrb),
+        .ext_s00_axi_wlast   (m_wlast),
+        .ext_s00_axi_wvalid  (m_wvalid),
+        .ext_s00_axi_wready  (m_wready),
+        .ext_s00_axi_bid     (m_bid),
+        .ext_s00_axi_bresp   (m_bresp),
+        .ext_s00_axi_bvalid  (m_bvalid),
+        .ext_s00_axi_bready  (m_bready),
+        .ext_s00_axi_arid    (m_arid),
+        .ext_s00_axi_araddr  (m_araddr),
+        .ext_s00_axi_arlen   (m_arlen),
+        .ext_s00_axi_arsize  (m_arsize),
+        .ext_s00_axi_arburst (m_arburst),
+        .ext_s00_axi_arlock  (m_arlock),
+        .ext_s00_axi_arcache (m_arcache),
+        .ext_s00_axi_arprot  (m_arprot),
+        .ext_s00_axi_arqos   (m_arqos),
+        .ext_s00_axi_arvalid (m_arvalid),
+        .ext_s00_axi_arready (m_arready),
+        .ext_s00_axi_rid     (m_rid),
+        .ext_s00_axi_rdata   (m_rdata),
+        .ext_s00_axi_rresp   (m_rresp),
+        .ext_s00_axi_rlast   (m_rlast),
+        .ext_s00_axi_rvalid  (m_rvalid),
+        .ext_s00_axi_rready  (m_rready),
 
-        // s01 — idle (no second master in this TB)
-        .s01_axi_awid    (8'h0),
-        .s01_axi_awaddr  (32'h0),
-        .s01_axi_awlen   (8'h0),
-        .s01_axi_awsize  (3'h0),
-        .s01_axi_awburst (2'h0),
-        .s01_axi_awlock  (1'b0),
-        .s01_axi_awcache (4'h0),
-        .s01_axi_awprot  (3'h0),
-        .s01_axi_awqos   (4'h0),
-        .s01_axi_awvalid (1'b0),
-        .s01_axi_wdata   (32'h0),
-        .s01_axi_wstrb   (4'h0),
-        .s01_axi_wlast   (1'b0),
-        .s01_axi_wvalid  (1'b0),
-        .s01_axi_bready  (1'b0),
-        .s01_axi_arid    (8'h0),
-        .s01_axi_araddr  (32'h0),
-        .s01_axi_arlen   (8'h0),
-        .s01_axi_arsize  (3'h0),
-        .s01_axi_arburst (2'h0),
-        .s01_axi_arlock  (1'b0),
-        .s01_axi_arcache (4'h0),
-        .s01_axi_arprot  (3'h0),
-        .s01_axi_arqos   (4'h0),
-        .s01_axi_arvalid (1'b0),
-        .s01_axi_rready  (1'b0),
+        // DMA CSR slave interface
+        .dma_csr_awaddr      (32'h0),
+        .dma_csr_awprot      (3'h0),
+        .dma_csr_awvalid     (1'b0),
+        .dma_csr_awready     (),
+        .dma_csr_wdata       (32'h0),
+        .dma_csr_wstrb       (4'h0),
+        .dma_csr_wvalid      (1'b0),
+        .dma_csr_wready      (),
+        .dma_csr_bresp       (),
+        .dma_csr_bvalid      (),
+        .dma_csr_bready      (1'b0),
+        .dma_csr_araddr      (32'h0),
+        .dma_csr_arprot      (3'h0),
+        .dma_csr_arvalid     (1'b0),
+        .dma_csr_arready     (),
+        .dma_csr_rdata       (),
+        .dma_csr_rresp       (),
+        .dma_csr_rvalid      (),
+        .dma_csr_rready      (1'b0),
 
-        // UART I/O
-        .uart_rx         (uart_rx),
-        .uart_tx         (uart_tx),
-        .uart_irq        (uart_irq)
+        // Peripherals external I/O
+        .uart_rx             (uart_rx),
+        .uart_tx             (uart_tx),
+        .gpio_i              (gpio_i),
+        .gpio_o              (gpio_o),
+        .gpio_dir_o          (gpio_dir_o),
+
+        // Interrupts
+        .uart_irq_o          (uart_irq),
+        .timer_irq_o         (timer_irq),
+        .aes_irq_o           (aes_irq),
+        .sha_irq_o           (sha_irq),
+        .dma_done_o          (dma_done),
+        .dma_error_o         (dma_error),
+        .gpio_intr_o         (gpio_intr),
+        .cpu_halt_status_o   ()
     );
 
     // =========================================================================
     // Task: AXI4 single-beat write
-    //
-    // [F1] Extra @(posedge clk) after raising valids, BEFORE the first
-    //      while-ready poll.  Prevents 0-delay race on same-cycle READY.
-    //
-    // [F2] awvalid and wvalid stay asserted until BVALID is observed.
-    //      The UART RTL gates bvalid on (awvalid & wvalid); deassert early
-    //      and bvalid is permanently gated to 0 → deadlock.
     // =========================================================================
     task axi_write;
         input [31:0] addr;
         input [31:0] data;
+        reg aw_done;
+        reg w_done;
         begin
-            // Present all address and data signals simultaneously.
             @(posedge clk);
-            m_awid    = 8'h01;
-            m_awaddr  = addr;
-            m_awlen   = 8'h00;        // single beat
-            m_awsize  = 3'b010;       // 4 bytes
-            m_awburst = 2'b01;        // INCR
-            m_awlock  = 1'b0;
-            m_awcache = 4'b0010;
-            m_awprot  = 3'b000;
-            m_awqos   = 4'h0;
-            m_awvalid = 1'b1;
-            m_wdata   = data;
-            m_wstrb   = 4'hF;
-            m_wlast   = 1'b1;         // always last for single-beat
-            m_wvalid  = 1'b1;
-            m_bready  = 1'b1;
+            m_awid    <= 8'h01;
+            m_awaddr  <= addr;
+            m_awlen   <= 8'h00;        // single beat
+            m_awsize  <= 3'b010;       // 4 bytes
+            m_awburst <= 2'b01;        // INCR
+            m_awlock  <= 1'b0;
+            m_awcache <= 4'b0010;
+            m_awprot  <= 3'b000;
+            m_awqos   <= 4'h0;
+            m_awvalid <= 1'b1;
+            m_wdata   <= data;
+            m_wstrb   <= 4'hF;
+            m_wlast   <= 1'b1;         // always last for single-beat
+            m_wvalid  <= 1'b1;
+            m_bready  <= 1'b1;
+            aw_done    = 1'b0;
+            w_done     = 1'b0;
 
-            // [F1] Advance one cycle so the DUT can register the valid inputs,
-            // then start polling.  Avoids evaluating the while-condition on the
-            // same delta-time as the signal assignment.
+            while (!aw_done || !w_done) begin
+                @(posedge clk);
+                if (m_awvalid && m_awready) begin
+                    m_awvalid <= 1'b0;
+                    aw_done = 1'b1;
+                end
+                if (m_wvalid && m_wready) begin
+                    m_wvalid <= 1'b0;
+                    m_wlast  <= 1'b0;
+                    w_done = 1'b1;
+                end
+            end
+
+            while (!m_bvalid) begin
+                @(posedge clk);
+            end
+            m_bready <= 1'b0;
             @(posedge clk);
-            while (!m_awready) @(posedge clk);
-
-            // Wait for WREADY — awvalid/wvalid remain asserted.
-            while (!m_wready)  @(posedge clk);
-
-            // [F2] Wait for BVALID — awvalid/wvalid MUST stay high so the
-            // UART's axi_wren signal stays asserted and bvalid is not gated off.
-            while (!m_bvalid)  @(posedge clk);
-
-            // Handshake complete: deassert all on the next clock edge.
-            @(posedge clk);
-            m_awvalid = 1'b0;
-            m_wvalid  = 1'b0;
-            m_wlast   = 1'b0;
-            m_bready  = 1'b0;
         end
     endtask
 
     // =========================================================================
     // Task: AXI4 single-beat read
-    //
-    // [F1] Extra @(posedge clk) before first poll.
-    // [F3] arvalid stays asserted until RVALID is seen (RTL rvalid gating).
     // =========================================================================
     task axi_read;
         input  [31:0] addr;
         output [31:0] rdata;
+        reg ar_done;
         begin
             @(posedge clk);
-            m_arid    = 8'h01;
-            m_araddr  = addr;
-            m_arlen   = 8'h00;
-            m_arsize  = 3'b010;
-            m_arburst = 2'b01;
-            m_arlock  = 1'b0;
-            m_arcache = 4'b0010;
-            m_arprot  = 3'b000;
-            m_arqos   = 4'h0;
-            m_arvalid = 1'b1;
-            m_rready  = 1'b1;
+            m_arid    <= 8'h01;
+            m_araddr  <= addr;
+            m_arlen   <= 8'h00;
+            m_arsize  <= 3'b010;
+            m_arburst <= 2'b01;
+            m_arlock  <= 1'b0;
+            m_arcache <= 4'b0010;
+            m_arprot  <= 3'b000;
+            m_arqos   <= 4'h0;
+            m_arvalid <= 1'b1;
+            m_rready  <= 1'b1;
+            ar_done    = 1'b0;
 
-            // [F1] Advance one cycle before polling.
-            @(posedge clk);
-            while (!m_arready) @(posedge clk);
+            while (!ar_done) begin
+                @(posedge clk);
+                if (m_arvalid && m_arready) begin
+                    m_arvalid <= 1'b0;
+                    ar_done = 1'b1;
+                end
+            end
 
-            // [F3] arvalid stays high — RTL gates rvalid on arvalid.
-            while (!m_rvalid)  @(posedge clk);
+            while (!m_rvalid) begin
+                @(posedge clk);
+            end
             rdata = m_rdata;
-
-            // Deassert on next clock edge.
+            m_rready <= 1'b0;
             @(posedge clk);
-            m_arvalid = 1'b0;
-            m_rready  = 1'b0;
         end
     endtask
 
@@ -385,8 +442,8 @@ module tb_soc_top;
                 repeat (baud_clks) @(posedge uart_clk);
             end
 
-            // Step 5: skip stop bit
-            repeat (baud_clks) @(posedge uart_clk);
+            // Step 5: Advance slightly into stop bit (line is 1), so next start bit is cleanly caught
+            repeat (10) @(posedge uart_clk);
         end
     endtask
 
@@ -399,13 +456,13 @@ module tb_soc_top;
     task check;
         input [31:0]  got;
         input [31:0]  exp;
-        input [159:0] label;
+        input [255:0] label;
         begin
             if (got === exp) begin
-                $display("[PASS] %-20s : got 0x%0h", label, got);
+                $display("[PASS] %-28s : got 0x%0h", label, got);
                 pass_cnt = pass_cnt + 1;
             end else begin
-                $display("[FAIL] %-20s : got 0x%0h  expected 0x%0h",
+                $display("[FAIL] %-28s : got 0x%0h  expected 0x%0h",
                          label, got, exp);
                 fail_cnt = fail_cnt + 1;
             end
@@ -436,6 +493,7 @@ module tb_soc_top;
         m_arcache = 4'h0;   m_arprot  = 3'h0;   m_arqos   = 4'h0;
         m_arvalid = 1'b0;   m_rready  = 1'b0;
         uart_rx   = 1'b1;   // UART idle high
+        gpio_i    = 64'h0;
 
         // -----------------------------------------------------------------
         // Reset sequence: hold for 10 cycles, release, settle 5 cycles
@@ -597,6 +655,96 @@ module tb_soc_top;
         end
 
         // =================================================================
+        // TEST 10: GPIO Direction and Output Register
+        // =================================================================
+        $display("\n--- TEST 10: GPIO Direction & Output Register ---");
+        axi_write(GPIO_OE0, 32'hFFFF_FFFF);          // lower 32 pins configured as outputs
+        axi_read(GPIO_OE0, rd_data);
+        check(rd_data, 32'hFFFF_FFFF, "GPIO OE0 readback");
+
+        axi_write(GPIO_OUT0, 32'hA5A5_5A5A);
+        axi_read(GPIO_OUT0, rd_data);
+        check(rd_data, 32'hA5A5_5A5A, "GPIO OUT0 readback");
+        check(gpio_o[31:0], 32'hA5A5_5A5A, "GPIO pins output value");
+
+        // =================================================================
+        // TEST 11: GPIO Raw Input Register
+        // =================================================================
+        $display("\n--- TEST 11: GPIO Raw Input Register ---");
+        gpio_i = 64'h0000_0000_1234_5678;
+        repeat (3) @(posedge clk);
+        axi_read(GPIO_IN0, rd_data);
+        check(rd_data, 32'h1234_5678, "GPIO IN0 readback");
+
+        // =================================================================
+        // TEST 12: GPIO Atomic Operations (SET, CLR, TGL)
+        // =================================================================
+        $display("\n--- TEST 12: GPIO Atomic Operations ---");
+        axi_write(GPIO_SET0, 32'h0000_00FF);         // Set bits [7:0]
+        axi_read(GPIO_OUT0, rd_data);
+        check(rd_data, 32'hA5A5_5AFF, "GPIO SET0 verify");
+
+        axi_write(GPIO_CLR0, 32'h0000_000F);         // Clear bits [3:0]
+        axi_read(GPIO_OUT0, rd_data);
+        check(rd_data, 32'hA5A5_5AF0, "GPIO CLR0 verify");
+
+        axi_write(GPIO_TGL0, 32'h0000_FF00);         // Toggle bits [15:8]
+        axi_read(GPIO_OUT0, rd_data);
+        check(rd_data, 32'hA5A5_A5F0, "GPIO TGL0 verify");
+
+        // =================================================================
+        // TEST 13: System Timer (rv_timer)
+        // =================================================================
+        $display("\n--- TEST 13: System Timer (rv_timer) ---");
+        // Write compare register
+        axi_write(TIMER_CMP_L, 32'h0000_0100);
+        axi_read(TIMER_CMP_L, rd_data);
+        check(rd_data, 32'h0000_0100, "TIMER CMP_L readback");
+
+        // Enable timer
+        axi_write(TIMER_CTRL, 32'h0000_0001);
+        repeat (10) @(posedge clk);
+        axi_read(TIMER_MTIME_L, rd_data);
+        if (rd_data > 0) begin
+            $display("[PASS] %-20s : count incremented to 0x%0h", "TIMER MTIME_L", rd_data);
+            pass_cnt = pass_cnt + 1;
+        end else begin
+            $display("[FAIL] %-20s : count did not increment (got 0x%0h)", "TIMER MTIME_L", rd_data);
+            fail_cnt = fail_cnt + 1;
+        end
+
+        // =================================================================
+        // TEST 14: SHA-256 Accelerator Register Access
+        // =================================================================
+        $display("\n--- TEST 14: SHA-256 Accelerator ---");
+        // Read core name ("sha2" = 0x7368_6132)
+        axi_read(SHA_NAME0, rd_data);
+        check(rd_data, 32'h7368_6132, "SHA-256 NAME0 readback");
+
+        // Read STATUS register (should be ready = bit 0 high)
+        axi_read(SHA_STATUS, rd_data);
+        check(rd_data[0], 1'b1, "SHA-256 ready flag");
+
+        // Write block word 0
+        axi_write(SHA_BLOCK0, 32'h6162_6380); // "abc" padded
+        axi_read(SHA_BLOCK0, rd_data);
+        check(rd_data, 32'h6162_6380, "SHA-256 BLOCK0 readback");
+
+        // =================================================================
+        // TEST 15: AES-256 Accelerator Register Access
+        // =================================================================
+        $display("\n--- TEST 15: AES-256 Accelerator ---");
+        // Write IV0 (R/W register for 128-bit IV)
+        axi_write(AES_IV0, 32'hDEAD_BEEF);
+        axi_read(AES_IV0, rd_data);
+        check(rd_data, 32'hDEAD_BEEF, "AES IV0 readback");
+
+        // Write & Read CTRL register (configure key_size=256-bit, irq_en=1)
+        axi_write(AES_CTRL, 32'h0000_0012); // ctrl_irq_en=1, ctrl_key_size=2'b10 (256-bit)
+        axi_read(AES_CTRL, rd_data);
+        check(rd_data[4:0], 5'h12, "AES CTRL readback");
+
+        // =================================================================
         // Summary
         // =================================================================
         repeat (5) @(posedge clk);
@@ -621,13 +769,18 @@ module tb_soc_top;
     end
 
     // =========================================================================
-    // FSDB waveform dump — full SoC hierarchy
+    // Waveform dump
     // =========================================================================
     initial begin
+`ifdef FSDB
         $fsdbDumpfile("dump.fsdb");
         $fsdbDumpvars(0, tb_soc_top);
         $fsdbDumpSVA();
         $fsdbDumpMDA();
+`else
+        $dumpfile("dump.vcd");
+        $dumpvars(0, tb_soc_top);
+`endif
     end
 
 endmodule

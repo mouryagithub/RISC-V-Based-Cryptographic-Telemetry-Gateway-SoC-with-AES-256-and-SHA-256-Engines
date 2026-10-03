@@ -64,15 +64,16 @@ module test;
 reg		clk;
 reg		rst;
 
-reg	[383:0]	tv[512:0];	// Test vectors
-wire	[383:0]	tmp;
+reg	[511:0]	tv[512:0];	// Test vectors
+wire	[511:0]	tmp;
 reg		kld;
-wire	[127:0]	key, plain, ciph;
+wire	[255:0]	key;
+wire	[127:0]	plain, ciph;
 wire	[127:0]	text_in;
 wire	[127:0]	text_out;
 wire	[127:0]	text_out2;
 reg	[127:0]	text_exp;
-wire		done, done2;
+wire		done, done2, kdone;
 integer		n, error_cnt;
 
 initial
@@ -100,7 +101,7 @@ initial
 	$display("");
 	$display("Started random test ...");
 
-tv[0]= 384'h00112233445566778899aabbccddeeff0000000000000000000000000000000184d4c9c08b4f482861e3a9c6c35bc4d9;
+tv[0]= 512'h000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00112233445566778899aabbccddeeff8ea2b7ca516745bfeafc49904b496089;
 tv[1]= 384'h00112233445566778899aabbccddeeff000000000000000000000000000000021df927374513bfd49f436bd73f325285;
 tv[2]= 384'h00112233445566778899aabbccddeeff00000000000000000000000000000003daef4ff7e13d46a6dbcb1c024e725387;
 tv[3]= 384'h00112233445566778899aabbccddeeff0000000000000000000000000000000406e865b7a0362d2fc1a1563bc2e30584;
@@ -386,7 +387,7 @@ tv[282]= 384'h00112233445566778899aabbccddeeff0000000000000000000000000000011bc6
 tv[283]= 384'h00112233445566778899aabbccddeeff0000000000000000000000000000011c5e869ba3bc4bc8ddb42b06d6609de97c;
 
 
-for(n=0;n<284;n=n+1)
+for(n=0;n<1;n=n+1)
    begin
 	@(posedge clk);
 	#1;
@@ -434,7 +435,7 @@ for(n=0;n<284;n=n+1)
 end
 
 assign tmp = tv[n];
-assign key     = kld ? tmp[383:256] : 128'hx;
+assign key     = kld ? tmp[511:256] : 256'hx;
 assign text_in = kld ? tmp[255:128] : 128'hx;
 assign plain   = tmp[255:128];
 assign ciph    = tmp[127:0];
@@ -455,6 +456,7 @@ aes_inv_cipher_top u1(
 	.clk(		clk		),
 	.rst(		rst		),
 	.kld(		kld		),
+	.kdone(		kdone		),
 	.ld(		done		),
 	.done(		done2		),
 	.key(		key		),

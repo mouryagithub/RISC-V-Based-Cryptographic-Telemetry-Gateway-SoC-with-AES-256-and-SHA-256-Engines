@@ -83,7 +83,7 @@ module aes_axi_slave #(
     // -------------------------------------------------------------------------
     output reg                        cipher_ld,          // → ld  (self-clearing)
     input  wire                       cipher_done,        // ← done
-    output wire [127:0]               cipher_key,         // → key[127:0]
+    output wire [255:0]               cipher_key,         // → key[255:0]
     output wire [127:0]               cipher_text_in,     // → text_in[127:0]
     input  wire [127:0]               cipher_text_out,    // ← text_out[127:0]
 
@@ -94,7 +94,7 @@ module aes_axi_slave #(
     input  wire                       inv_kdone,          // ← kdone
     output reg                        inv_ld,             // → ld  (self-clearing)
     input  wire                       inv_done,           // ← done
-    output wire [127:0]               inv_key,            // → key[127:0]
+    output wire [255:0]               inv_key,            // → key[255:0]
     output wire [127:0]               inv_text_in,        // → text_in[127:0]
     input  wire [127:0]               inv_text_out        // ← text_out[127:0]
 );
@@ -121,6 +121,24 @@ module aes_axi_slave #(
 
     // --- Inv cipher text_in (128-bit) ----------------------------------------
     reg [127:0] inv_tin;
+
+    // --- Output registers captured on core done pulses ----------------------
+    reg [127:0] cipher_tout_r;
+    reg [127:0] inv_tout_r;
+
+    always @(posedge aclk) begin
+        if (rst)
+            cipher_tout_r <= 128'b0;
+        else if (cipher_done)
+            cipher_tout_r <= cipher_text_out;
+    end
+
+    always @(posedge aclk) begin
+        if (rst)
+            inv_tout_r <= 128'b0;
+        else if (inv_done)
+            inv_tout_r <= inv_text_out;
+    end
 
     // =========================================================================
     // AXI4-Lite Write Path
@@ -300,10 +318,10 @@ module aes_axi_slave #(
     // For the 256-bit two-pulse scheme: firmware loads KEY0-3, pulses LD,
     // then loads KEY4-7 into cipher_key_lo and pulses LD again.
     // =========================================================================
-    assign cipher_key     = cipher_key_lo;   // key[127:0] → cipher core
-    assign cipher_text_in = cipher_tin;      // text_in[127:0] → cipher core
-    assign inv_key        = inv_key_lo;      // key[127:0] → inv_cipher core
-    assign inv_text_in    = inv_tin;         // text_in[127:0] → inv_cipher core
+    assign cipher_key     = {cipher_key_hi, cipher_key_lo};   // key[255:0] → cipher core
+    assign cipher_text_in = cipher_tin;                        // text_in[127:0] → cipher core
+    assign inv_key        = {inv_key_hi, inv_key_lo};          // key[255:0] → inv_cipher core
+    assign inv_text_in    = inv_tin;                           // text_in[127:0] → inv_cipher core
 
     // =========================================================================
     // AXI4-Lite Read Path
@@ -340,11 +358,11 @@ module aes_axi_slave #(
                     // 0x24–0x30 CIPHER_TEXT_IN0–3: WO, reads return 0
                     7'h09, 7'h0A, 7'h0B, 7'h0C: s_axi_rdata <= 32'b0;
 
-                    // 0x34–0x40 CIPHER_TEXT_OUT0–3: RO, live from core
-                    7'h0D: s_axi_rdata <= cipher_text_out[31:0];
-                    7'h0E: s_axi_rdata <= cipher_text_out[63:32];
-                    7'h0F: s_axi_rdata <= cipher_text_out[95:64];
-                    7'h10: s_axi_rdata <= cipher_text_out[127:96];
+                    // 0x34–0x40 CIPHER_TEXT_OUT0–3: RO, latched on cipher_done
+                    7'h0D: s_axi_rdata <= cipher_tout_r[31:0];
+                    7'h0E: s_axi_rdata <= cipher_tout_r[63:32];
+                    7'h0F: s_axi_rdata <= cipher_tout_r[95:64];
+                    7'h10: s_axi_rdata <= cipher_tout_r[127:96];
 
                     // ----------------------------------------------------------
                     // INV CIPHER register set reads
@@ -363,11 +381,11 @@ module aes_axi_slave #(
                     // 0x68–0x74 INV_TEXT_IN0–3: WO, reads return 0
                     7'h1A, 7'h1B, 7'h1C, 7'h1D: s_axi_rdata <= 32'b0;
 
-                    // 0x78–0x84 INV_TEXT_OUT0–3: RO, live from core
-                    7'h1E: s_axi_rdata <= inv_text_out[31:0];
-                    7'h1F: s_axi_rdata <= inv_text_out[63:32];
-                    7'h20: s_axi_rdata <= inv_text_out[95:64];
-                    7'h21: s_axi_rdata <= inv_text_out[127:96];
+                    // 0x78–0x84 INV_TEXT_OUT0–3: RO, latched on inv_done
+                    7'h1E: s_axi_rdata <= inv_tout_r[31:0];
+                    7'h1F: s_axi_rdata <= inv_tout_r[63:32];
+                    7'h20: s_axi_rdata <= inv_tout_r[95:64];
+                    7'h21: s_axi_rdata <= inv_tout_r[127:96];
 
                     default: begin
                         s_axi_rdata <= 32'b0;

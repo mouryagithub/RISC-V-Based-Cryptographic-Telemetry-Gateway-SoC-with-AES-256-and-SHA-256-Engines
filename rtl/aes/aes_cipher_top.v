@@ -60,7 +60,7 @@ module aes_cipher_top(clk, rst, ld, done, key, text_in, text_out );
 input		clk, rst;
 input		ld;
 output		done;
-input	[127:0]	key;
+input	[255:0]	key;
 input	[127:0]	text_in;
 output	[127:0]	text_out;
 
@@ -103,7 +103,7 @@ reg	[3:0]	dcnt;
 always @(posedge clk)
 	if(!rst)	dcnt <= #1 4'h0;
 	else
-	if(ld)		dcnt <= #1 4'hb;
+	if(ld)		dcnt <= #1 4'hf;
 	else
 	if(|dcnt)	dcnt <= #1 dcnt - 4'h1;
 
@@ -222,7 +222,7 @@ endfunction
 // Modules
 //
 
-aes_key_expand_128 u0(
+aes_key_expand_256 u0(
 	.clk(		clk	),
 	.kld(		ld	),
 	.key(		key	),

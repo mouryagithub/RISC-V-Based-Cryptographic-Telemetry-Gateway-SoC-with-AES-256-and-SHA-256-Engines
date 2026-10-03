@@ -187,7 +187,7 @@ module aes_core_top #(
 
     // AES core connections
     reg          enc_ld,  dec_ld,  dec_kld;
-    reg  [127:0] core_key_mux;    // 128-bit key presented to both cores
+    reg  [255:0] core_key_mux;    // 256-bit key presented to both cores
     reg  [127:0] text_in_mux;     // 128-bit plaintext / ciphertext to cores
 
     wire         enc_done;
@@ -229,7 +229,7 @@ module aes_core_top #(
             enc_ld           <= 1'b0;
             dec_ld           <= 1'b0;
             dec_kld          <= 1'b0;
-            core_key_mux     <= 128'b0;
+            core_key_mux     <= 256'b0;
             text_in_mux      <= 128'b0;
             feedback_reg     <= 128'b0;
             core_busy_r      <= 1'b0;
@@ -256,16 +256,16 @@ module aes_core_top #(
                         core_busy_r   <= 1'b1;
                         blk_remaining <= (|{16'b0, 1'b0} ? 16'b0 :  // guard
                                           ({16{1'b1}} & 16'd1));      // single block default
-                        // Load first 128-bit key half
-                        core_key_mux  <= key_data[127:0];
+                        // Load 256-bit key
+                        core_key_mux  <= key_data;
                         state         <= ST_KEY_LOAD1;
                     end
                 end
 
                 // ----------------------------------------------------------
-                // Key load stage 1 – feed lower 128 bits
+                // Key load stage 1 – feed 256-bit key
                 ST_KEY_LOAD1: begin
-                    core_key_mux <= key_data[127:0];
+                    core_key_mux <= key_data;
                     if (!ctrl_decrypt) begin
                         enc_ld <= 1'b1;   // cipher core uses ld for both key+data
                         // For encrypt-only key schedule, drive dummy text_in=0
@@ -277,26 +277,14 @@ module aes_core_top #(
                 end
 
                 // ----------------------------------------------------------
-                // Wait for first key half to finish
+                // Wait for key load to finish
                 ST_KEY_WAIT1: begin
                     if (!ctrl_decrypt && enc_done) begin
-                        core_key_ready_r <= !use_256 && !use_192; // done if 128-bit key
-                        if (use_256 || use_192) begin
-                            // Feed second half
-                            core_key_mux <= use_256 ? key_data[255:128] : key_data[191:64];
-                            state        <= ST_KEY_LOAD2;
-                        end else begin
-                            // 128-bit key: key schedule done, go to data
-                            state <= ST_DATA_LOAD;
-                        end
+                        core_key_ready_r <= 1'b1;
+                        state            <= ST_DATA_LOAD;
                     end else if (ctrl_decrypt && dec_kdone) begin
-                        core_key_ready_r <= !use_256 && !use_192;
-                        if (use_256 || use_192) begin
-                            core_key_mux <= use_256 ? key_data[255:128] : key_data[191:64];
-                            state        <= ST_KEY_LOAD2;
-                        end else begin
-                            state <= ST_DATA_LOAD;
-                        end
+                        core_key_ready_r <= 1'b1;
+                        state            <= ST_DATA_LOAD;
                     end
                 end
 
@@ -349,7 +337,7 @@ module aes_core_top #(
                         dec_ld      <= 1'b1;
                     end
                     // Keep key loaded for this block
-                    core_key_mux <= key_data[127:0];
+                    core_key_mux <= key_data;
                     state        <= ST_DATA_WAIT;
                 end
 

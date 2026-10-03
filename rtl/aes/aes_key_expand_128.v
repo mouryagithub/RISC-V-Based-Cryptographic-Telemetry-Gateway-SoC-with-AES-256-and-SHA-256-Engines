@@ -79,6 +79,6 @@ aes_sbox u0(	.a(tmp_w[23:16]), .d(subword[31:24]));
 aes_sbox u1(	.a(tmp_w[15:08]), .d(subword[23:16]));
 aes_sbox u2(	.a(tmp_w[07:00]), .d(subword[15:08]));
 aes_sbox u3(	.a(tmp_w[31:24]), .d(subword[07:00]));
-aes_rcon r0(	.clk(clk), .kld(kld), .out(rcon));
+aes_rcon r0(	.clk(clk), .kld(kld), .en(1'b1), .out(rcon));
 endmodule
 
